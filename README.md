@@ -67,6 +67,3 @@ const QUEUE = 'Cw0KBwMEAg0BCgEIBAENCw';
 ```bash
 npm run test
 ```
-
-## Deployment
-merge to master branch.
