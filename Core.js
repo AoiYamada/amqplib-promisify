@@ -48,6 +48,7 @@ module.exports = class Core {
         await worker.Die();
         this.Connections[URL].close();
         delete this.Workers[URL];
+        delete this.Connections[URL];
     }
 
     /**

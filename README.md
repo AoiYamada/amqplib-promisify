@@ -1,5 +1,4 @@
 # amqplib-promisify
----
 A simplified and promisified class for using amqplib.
 
 
@@ -37,8 +36,12 @@ const QUEUE = 'Cw0KBwMEAg0BCgEIBAENCw';
         data1: 1,
         data2: 22,
         data3: 333,
+        ack: [Function] // Only ocurr when option.noAck is false/null/undefined
     }
      */
+
+    // ack the mq server the task is done, remove it from queue
+    task.ack();
 
     // Consume all tasks by handler function
     const taskNumber = 5;
@@ -46,7 +49,11 @@ const QUEUE = 'Cw0KBwMEAg0BCgEIBAENCw';
     for (let i = 0; i < taskNumber; i++) {
         await worker.Put(QUEUE, seed);
     }
-    await worker.Consume(QUEUE, task => counter++);
+    await worker.Consume(
+        QUEUE, 
+        task => counter++,
+        err => console.log(err)
+    );
     console.log(taskNumber === counter); // true
 
     // Close too fast will stop the acknowledgement, tasks will stuck in the queue.

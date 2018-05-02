@@ -17,7 +17,7 @@ module.exports = class Worker {
      * Put a task to the queue
      * @param {String} queue - queue name
      * @param {Object} payload - task contents
-     * @throw {Error}
+     * @throw {Error} error about _AssertQ or amqp #sendToQueue
      *
      */
     async Put(queue, payload) {
@@ -30,7 +30,8 @@ module.exports = class Worker {
      * @param {String} queue - queue name
      * @param {Object} options - see Channel#get
      *                           http://www.squaremobius.net/amqp.node/channel_api.html#channel_get
-     * @return {Promise<Object|Error>} promise of task object
+     * @return {Promise<Object|Error>} task - promise of task object
+     * @return {Function} task.ack - Method to notify the mq server the task is done, remove the task from queue
      * @throw {Error}
      *
      */
@@ -41,7 +42,7 @@ module.exports = class Worker {
             const content = msg.content.toString();
             const task = JSON.parse(content);
             if (!options.noAck)
-                this.Channel.ack(msg);
+                task.ack = () => this.Channel.ack(msg);
             return task;
         } else {
             throw new Error('No more message!');
@@ -53,18 +54,26 @@ module.exports = class Worker {
      * @param {String} queue - queue name
      * @param {Object} options - see Channel#consume
      *                           http://www.squaremobius.net/amqp.node/channel_api.html#channel_consume
-     * @param {Worker~Handler} handler - queue name
+     * @param {Worker~Handler} handler - handle the task
+     * @param {Worker~ErrHandler} err_handler - handle error throw by handler
      * @return {Promise<Object|Error>} promise of task object
-     * @throw {Error}
+     * @throw {Error} about _AssertQ or the amqplib function #consume
      *
      */
 
     /**
      * @callback Worker~Handler
      * @param {Object} task - parsed task got from the message from queue
+     * @throw {Error}
      *
      */
-    async Consume(queue, handler, options = {}) {
+
+    /**
+     * @callback Worker~ErrHandler
+     * @param {Error}
+     *
+     */
+    async Consume(queue, handler, err_handler, options = {}) {
         await this._AssertQ(queue);
         await this.Channel.consume(
             queue,
@@ -78,7 +87,7 @@ module.exports = class Worker {
                             this.Channel.ack(msg);
                     }
                 } catch (err) {
-                    // add error hander?
+                    err_handler(err);
                 }
             },
             options
