@@ -4,10 +4,10 @@ const path = require('path');
 const CWD = process.cwd();
 const MODELS_PATH = './models/';
 
-const BibAmqp = require(path.join(CWD, 'Core'));
+const AMQP = require(path.join(CWD, 'Core'));
 const Worker = require(path.join(CWD, MODELS_PATH, 'Worker'));
 
-global.bib_amqp = new BibAmqp();
+global.amqp = new AMQP();
 
 const SERVER = 'amqp://127.0.0.1';
 // const QUEUE = 'Cw0KBwMEAg0BCgEIBAENCw';
@@ -16,7 +16,7 @@ const SERVER = 'amqp://127.0.0.1';
 describe('Core', () => {
     it('GetWorker should resolve a worker', async() => {
         try {
-            const worker = await bib_amqp.GetWorker(SERVER);
+            const worker = await amqp.GetWorker(SERVER);
             assert(worker instanceof Worker, 'worker is not Worker, it is confusing...');
         } catch(err) {
         	assert(false, err);
@@ -25,7 +25,7 @@ describe('Core', () => {
 
     after(async () => {
         try {
-            await bib_amqp.KillAll();
+            await amqp.KillAll();
             assert(true);
         } catch(err) {
             assert(false, err.message);
