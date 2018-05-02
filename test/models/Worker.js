@@ -34,6 +34,7 @@ describe('Worker', async() => {
         try {
             const worker = await workerPromise;
             const task = await worker.Get(QUEUE);
+            task.ack();
             assert(objCompare(task, TASK), `Tasks should equal, task: ${JSON.stringify(task)} while TASK:${JSON.stringify(TASK)}`);
         } catch (err) {
             assert(false, err.message);
@@ -48,7 +49,11 @@ describe('Worker', async() => {
             for (let i = 0; i < taskNumber; i++) {
                 await worker.Put(QUEUE, TASK);
             }
-            await worker.Consume(QUEUE, task => counter++);
+            await worker.Consume(
+                QUEUE, 
+                task => counter++,
+                err => assert(true, 'Should not touch here...')
+            );
             assert(taskNumber === counter, `${counter} tasks are consumed but ${taskNumber} tasks left`);
         } catch (err) {
             assert(false, err.message);
