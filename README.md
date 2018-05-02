@@ -4,7 +4,7 @@ A simplified and promisified class for using amqplib.
 
 ## Installation
 ```bash
-npm i git+git@github.com:AoiYamada/amqplib-promisify.git --save
+npm i git+https://github.com/AoiYamada/amqplib-promisify --save
 ```
 
 ## Usage
