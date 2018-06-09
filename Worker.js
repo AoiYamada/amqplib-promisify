@@ -3,6 +3,11 @@ const amqplib = require('amqplib');
 // private static cache of connections
 const _connections = Object.create(null);
 
+const default_options = {
+    retry: 5,
+    retryInterval: 1000,
+};
+
 /**
  * https://www.npmjs.com/package/amqplib
  *
@@ -19,16 +24,20 @@ class Worker {
     /**
      * Get a promise of Worker
      * @param {String} URL - mq server url
+     * @param {Object} [options]
+     * @param {Object} [options.retry=0] - reconnect times
+     * @param {Object} [options.retryInterval=0] - reconnect time interval
      * @return {Promise<Worker|Error>} Instance of Worker
      *
      */
-    static async GetWorker(URL) {
+    static async GetWorker(URL, options = Object.create(null)) {
+        const _options = Object.assign({}, default_options, options);
         if (_connections[URL]) {
             const conn = _connections[URL];
             const channel = await conn.createConfirmChannel();
             return Promise.resolve(new Worker(channel));
         } else {
-            return new Promise(async (resolve, reject) => {
+            return new Promise(async(resolve, reject) => {
                 try {
                     const conn = await amqplib.connect(URL)
                     _connections[URL] = conn;
@@ -39,18 +48,18 @@ class Worker {
                         delete _connections[URL];
                         console.log(`${URL} disconnected...`);
 
-                        let retry = 7;
-                        while(retry--) {
+                        let { retry, retryInterval } = _options;
+                        while (retry--) {
                             console.log('Reconnecting...', retry);
                             try {
                                 const reborn_worker = await Worker.GetWorker(URL);
                                 worker._channel = reborn_worker._channel;
                                 retry = 0;
                                 console.log('Success');
-                            } catch(err) {
+                            } catch (err) {
                                 console.log('Fail');
                             }
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await new Promise(resolve => setTimeout(resolve, retryInterval));
                         }
                     });
                 } catch (err) {
